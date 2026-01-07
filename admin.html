@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark">
+    <div class="form-wrapper" style="align-items: flex-start; padding-top: 50px;">
+        
+        <div class="form-card admin-card">
+            <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Live Student Data</h2>
+                <button onclick="location.href='index.html'" style="width:auto; padding:8px 15px; font-size:12px;">🏠 Home</button>
+            </div>
+            
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%">Name</th>
+                        <th style="width: 20%">Grade</th>
+                        <th style="width: 30%">Parent Info</th>
+                        <th style="width: 25%">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="4" style="text-align:center; padding: 20px; opacity: 0.5;">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, collection, onSnapshot } from "./config.js";
+
+        // Listen for realtime updates
+        const unsub = onSnapshot(collection(db, "students"), (snapshot) => {
+            const tbody = document.getElementById("tableBody");
+            
+            if (snapshot.empty) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">No students yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            
+            snapshot.forEach(doc => {
+                const d = doc.data();
+                
+                // Check if they did story or art
+                const hasStory = d.story ? "📝 Story" : "";
+                const hasArt = d.drawingBase64 ? "🎨 Art" : "";
+                let status = "";
+                
+                if (hasStory && hasArt) status = "✅ Completed Both";
+                else if (hasStory) status = "📝 Story Only";
+                else if (hasArt) status = "🎨 Art Only";
+                else status = "⏳ Pending...";
+
+                const row = `
+                    <tr>
+                        <td style="font-weight:bold; color: #fff;">${d.studentName}</td>
+                        <td>${d.grade} <span style="opacity:0.6">(${d.section})</span></td>
+                        <td>
+                            <div style="font-weight:bold;">${d.parentName}</div>
+                            <div style="font-size:12px; opacity:0.7;">${d.contact}</div>
+                        </td>
+                        <td>
+                            <span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                ${status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        });
+    </script>
+</body>
+</html>
