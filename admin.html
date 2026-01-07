@@ -78,15 +78,27 @@
             const mapLink = d.location && d.location.lat ? 
                 `https://www.google.com/maps?q=${d.location.lat},${d.location.lng}` : "#";
 
+            // Identify if it's likely a phone or PC based on ISP
+            let connectionIcon = "🌐";
+            const isp = d.isp || "Unknown";
+            if(isp.includes("Jio") || isp.includes("Airtel") || isp.includes("Vodafone")) connectionIcon = "📡"; // Mobile Carrier
+            if(isp.includes("ACT") || isp.includes("Fibernet") || isp.includes("Broadband")) connectionIcon = "🏠"; // Home WiFi
+
             body.innerHTML = `
                 <div style="text-align:center;">
                     <a href="${mapLink}" target="_blank" class="primary-btn" style="text-decoration:none; display:inline-block; margin-bottom:15px; background:#00e5ff; color:#000;">🗺️ Open Google Maps</a>
                 </div>
                 <hr style="border-color:#333; margin:20px 0;">
+                
+                <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; margin-bottom:10px;">
+                    <p style="font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:1px;">Internet Provider</p>
+                    <p style="font-size:18px; color:#fff; font-weight:bold;">${connectionIcon} ${isp}</p>
+                </div>
+
                 <p><strong>🕒 Time:</strong> <span style="color:#fff">${new Date(d.timestamp).toLocaleString()}</span></p>
                 <p><strong>🌐 IP:</strong> <span style="color:#00e5ff">${d.ipAddress}</span></p>
                 <p><strong>🖥️ Screen:</strong> <span style="color:#ffaa00">${d.screenRes || "Unknown"}</span></p>
-                <p><strong>📶 Network:</strong> <span style="color:#ffaa00">${d.connection || "Unknown"}</span></p>
+                <p><strong>📶 Type:</strong> <span style="color:#ffaa00">${d.connection || "Unknown"}</span></p>
                 <p><strong>🔋 Battery:</strong> <span style="color:#00ffaa">${d.battery || "Unknown"}</span></p>
                 <p><strong>📱 Device:</strong> <span style="color:#aaa; font-size:12px;">${d.deviceInfo}</span></p>
             `;
