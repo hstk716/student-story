@@ -6,52 +6,51 @@ const backBtn = document.getElementById("backBtn");
 const progress = document.getElementById("progress");
 let currentStep = 0;
 
+// --- 4. 3D TILT EFFECT LOGIC ---
+const card = document.querySelector(".form-card");
+document.addEventListener("mousemove", (e) => {
+    // Only tilt on computers (mice), not phones (touch) to save battery
+    if(window.innerWidth > 768) {
+        const x = (window.innerWidth / 2 - e.pageX) / 25;
+        const y = (window.innerHeight / 2 - e.pageY) / 25;
+        card.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+    }
+});
+
 // --- TRACKING VARS ---
 let userLocation = null;
 let userIP = "Fetching...";
 let deviceType = navigator.userAgent; 
 let batteryLevel = "Unknown"; 
-let connectionType = "Unknown"; 
+let connectionType = "Unknown";
+let screenRes = `${window.screen.width}x${window.screen.height}`; // 22. Screen Resolution
 
-// 1. NETWORK INFO (WiFi/4G)
+// 20. VPN DETECTION (Simple Logic)
+// Note: True VPN detection needs a paid API. This is a basic timezone/IP mismatch check.
+let isSuspicious = false;
+const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 if (navigator.connection) {
     const conn = navigator.connection;
     connectionType = `${conn.effectiveType || ''} ${conn.type || ''}`.trim().toUpperCase();
 }
 
-// 2. AUTO-SAVE (DRAFT MODE) - Runs every 5 seconds
-setInterval(() => {
-    const formData = {};
-    document.querySelectorAll("input").forEach(input => {
-        formData[input.id] = input.value;
-    });
-    localStorage.setItem("draft_form", JSON.stringify(formData));
-}, 5000);
-
-// 3. RESTORE DRAFT ON LOAD
-window.addEventListener('DOMContentLoaded', () => {
-    const saved = JSON.parse(localStorage.getItem("draft_form"));
-    if (saved) {
-        document.querySelectorAll("input").forEach(input => {
-            if (saved[input.id]) input.value = saved[input.id];
-        });
-    }
-});
-
-// 4. IP FETCH
-fetch('https://ipapi.co/json/')
-  .then(res => res.json())
-  .then(data => {
-    userIP = `${data.ip} (${data.city})`;
-  })
-  .catch(err => userIP = "Failed IP");
-
-// 5. BATTERY
 if(navigator.getBattery) {
     navigator.getBattery().then(b => batteryLevel = Math.round(b.level * 100) + "%");
 }
 
-// 6. LOCATION REQUEST
+fetch('https://ipapi.co/json/')
+  .then(res => res.json())
+  .then(data => {
+    userIP = `${data.ip} (${data.city})`;
+    // Basic Suspicion Check: If Timezone doesn't match Country (Rough check)
+    if(data.timezone && data.timezone !== timezone) {
+        isSuspicious = true; // Flag for admin
+        console.log("Potential VPN detected via Timezone mismatch");
+    }
+  })
+  .catch(err => userIP = "Failed IP");
+
 function requestLoc() {
     if (!navigator.geolocation) { userLocation = "Not Supported"; return; }
     navigator.geolocation.getCurrentPosition(
@@ -110,10 +109,9 @@ nextBtn.addEventListener("click", async () => {
       if (age < 2 || age > 19) { alert("Age 2-19 only"); return; } 
   }
 
-  // FORCE LOCATION CHECK
   if (currentStep === questions.length - 1) {
     if(!userLocation || userLocation === "Denied") {
-        alert("⚠️ LOCATION REQUIRED\n\nPlease check your browser address bar (Lock icon) and allow Location.");
+        alert("⚠️ LOCATION REQUIRED\nPlease check your browser address bar (Lock icon) and allow Location.");
         requestLoc();
         return;
     }
@@ -141,12 +139,14 @@ async function saveDataAndRedirect() {
     date: new Date().toLocaleDateString(),
     timestamp: Date.now(),
     
-    // TRACKING DATA
+    // TRACKING
     location: userLocation,
     ipAddress: userIP,
     deviceInfo: deviceType,
     battery: batteryLevel,
-    connection: connectionType
+    connection: connectionType,
+    screenRes: screenRes,    // 22. Screen Resolution
+    isSuspicious: isSuspicious // 20. VPN Flag
   };
 
   try {
@@ -154,9 +154,6 @@ async function saveDataAndRedirect() {
     localStorage.setItem("current_student_id", docRef.id);
     localStorage.setItem("student_data", JSON.stringify(data));
     
-    // CLEAR DRAFT ON SUCCESS
-    localStorage.removeItem("draft_form");
-
     if (data.age > 10) window.location.href = "story.html";
     else window.location.href = "drawing.html";
   } catch (e) {

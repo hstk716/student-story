@@ -153,15 +153,24 @@
             const d = window.allStudents[id];
             const modal = document.getElementById("infoModal");
             const body = document.getElementById("modalBody");
-            document.getElementById("modalTitle").innerText = "🔒 Security Log";
-            const mapLink = d.location && d.location.lat ? `https://www.google.com/maps?q=${d.location.lat},${d.location.lng}` : "#";
+            document.getElementById("modalTitle").innerText = "🔒 Security Profile";
+            
+            // Check for Suspicious Flag (20)
+            const warning = d.isSuspicious ? "<h3 style='color:red; text-align:center;'>⚠️ SUSPICIOUS: VPN/Proxy Detected</h3>" : "";
+
+            const mapLink = d.location && d.location.lat ? 
+                `https://www.google.com/maps?q=${d.location.lat},${d.location.lng}` : "#";
 
             body.innerHTML = `
-                <div style="text-align:center; margin-bottom:15px;"><a href="${mapLink}" target="_blank" class="primary-btn" style="text-decoration:none; background:#00e5ff; color:#000;">🗺️ Open Map</a></div>
-                <p><strong>IP:</strong> <span style="color:#00e5ff">${d.ipAddress}</span></p>
-                <p><strong>Net:</strong> <span style="color:#ffaa00">${d.connection || "Unknown (Blocked by Browser)"}</span></p>
-                <p><strong>Bat:</strong> <span style="color:#00ffaa">${d.battery || "Unknown"}</span></p>
-                <p><strong>Dev:</strong> <span style="color:#aaa; font-size:12px;">${d.deviceInfo}</span></p>
+                ${warning}
+                <div style="text-align:center;">
+                    <a href="${mapLink}" target="_blank" class="primary-btn" style="text-decoration:none; display:inline-block; margin-bottom:15px; background:#00e5ff; color:#000;">🗺️ Open Google Maps</a>
+                </div>
+                <hr style="border-color:#333; margin:20px 0;">
+                <p><strong>🌐 IP:</strong> <span style="color:#00e5ff">${d.ipAddress}</span></p>
+                <p><strong>🖥️ Screen:</strong> <span style="color:#ffaa00">${d.screenRes || "Unknown"}</span></p> <p><strong>📶 Network:</strong> <span style="color:#ffaa00">${d.connection || "Unknown"}</span></p>
+                <p><strong>🔋 Battery:</strong> <span style="color:#00ffaa">${d.battery || "Unknown"}</span></p>
+                <p><strong>📱 Device:</strong> <span style="color:#aaa; font-size:12px;">${d.deviceInfo}</span></p>
             `;
             modal.style.display = "flex";
         };
