@@ -4,62 +4,33 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* SCROLLABLE TABLE CSS */
-        .table-container {
-            max-height: 65vh; /* Sets fixed height */
-            overflow-y: auto; /* Adds scrollbar if list is long */
-            border-radius: 12px;
-            border: 1px solid rgba(125,125,125,0.2);
-        }
-        .admin-table th {
-            position: sticky; top: 0;
-            background: #1a1a1a; /* Keep header visible while scrolling */
-            z-index: 10;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
-        /* FILTER INPUT STYLE */
-        #searchBox {
-            padding: 8px 15px; border-radius: 8px; border: 1px solid #444;
-            background: rgba(255,255,255,0.1); color: white; font-size: 13px; width: 200px;
-        }
-    </style>
 </head>
 <body class="dark">
-    <div class="form-wrapper" style="align-items: flex-start; padding-top: 30px;">
+    <div class="form-wrapper" style="align-items: flex-start; padding-top: 50px;">
         <div class="form-card admin-card">
-            
-            <div class="header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom: 20px;">
-                <div>
-                    <h2 style="margin:0; text-align:left;">Student Data</h2>
-                    <span id="activeCount" style="color:#00ffaa; font-size:12px;">Connecting...</span>
-                </div>
-                
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <input type="text" id="searchBox" placeholder="🔍 Filter (e.g. 5A, Rahul)..." onkeyup="filterTable()">
-                    
-                    <button onclick="downloadCSV()" class="gold-btn" style="padding:8px 15px; font-size:12px; white-space:nowrap;">📊 Export Visible</button>
+            <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Live Student Data</h2>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="downloadCSV()" class="gold-btn" style="padding:8px 15px; font-size:12px;">📊 Export CSV</button>
                     <button onclick="location.href='index.html'" style="padding:8px 15px; font-size:12px;">🏠 Home</button>
                 </div>
             </div>
             
-            <div class="table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Network/IP</th>
-                            <th style="text-align:center;">Loc</th>
-                            <th style="text-align:center;">Work</th>
-                            <th style="text-align:center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr><td colspan="5" style="text-align:center; padding: 20px;">Loading...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Student</th>
+                        <th>Network/IP</th>
+                        <th style="text-align:center;">Loc</th>
+                        <th>Work</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="6" style="text-align:center; padding: 20px;">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -74,74 +45,22 @@
     <script type="module">
         import { db, collection, onSnapshot, doc, deleteDoc } from "./config.js";
 
-        window.allStudents = {}; // Stores raw data
-        window.filteredIDs = []; // Stores currently visible IDs
+        window.allStudents = {};
 
-        // --- 1. SEARCH / FILTER FUNCTION ---
-        window.filterTable = () => {
-            const query = document.getElementById("searchBox").value.toLowerCase();
-            const rows = document.querySelectorAll(".student-row");
-            let visibleCount = 0;
-            window.filteredIDs = [];
-
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                const id = row.getAttribute("data-id");
-                
-                // If row text matches search (e.g. "5A" matches "Grade: 5 (A)")
-                if(text.includes(query)) {
-                    row.style.display = "";
-                    visibleCount++;
-                    window.filteredIDs.push(id);
-                } else {
-                    row.style.display = "none";
-                }
-            });
-            document.getElementById("activeCount").innerText = `🟢 Showing: ${visibleCount}`;
-        };
-
-        // --- 2. SMART CSV EXPORT (Exports only what you filtered) ---
-        window.downloadCSV = () => {
-            // Use filteredIDs if filter is active, otherwise all IDs
-            const idsToExport = window.filteredIDs.length > 0 ? window.filteredIDs : Object.keys(window.allStudents);
-            
-            if(idsToExport.length === 0) return alert("No data to export!");
-
-            const rows = [["Name", "Grade", "Section", "Parent", "Phone", "IP Address", "Network", "Battery", "Work Type"]];
-            
-            idsToExport.forEach(id => {
-                const d = window.allStudents[id];
-                if(!d) return;
-
-                let workType = d.story ? "Story" : (d.drawingBase64 ? "Art" : "Pending");
-                let cleanName = `"${d.studentName}"`;
-                
-                rows.push([
-                    cleanName, d.grade, d.section, d.parentName, d.contact, 
-                    d.ipAddress, d.connection || "N/A", d.battery || "N/A", workType
-                ]);
-            });
-
-            let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-            const link = document.createElement("a");
-            link.href = encodeURI(csvContent);
-            link.download = "student_data_filtered.csv";
-            document.body.appendChild(link);
-            link.click();
-        };
-
-        // --- 3. VIEW FUNCTIONS ---
+        // 1. VIEW WORK
         window.viewWork = (id, type) => {
             const data = window.allStudents[id];
+            if(!data) return alert("Data not found");
+
             const modal = document.getElementById("infoModal");
             const body = document.getElementById("modalBody");
-            document.getElementById("modalTitle").innerText = type === 'story' ? "📝 Story" : "🎨 Art";
+            document.getElementById("modalTitle").innerText = type === 'story' ? "📝 Student Story" : "🎨 Student Art";
             
             if(type === 'story') {
                 body.innerHTML = "";
                 const p = document.createElement("div");
                 p.style.cssText = "font-size:16px; line-height:1.6; color:#ccc; white-space: pre-wrap; max-height:60vh; overflow-y:auto; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;";
-                p.innerText = data.story || "No text.";
+                p.innerText = data.story || "No story content.";
                 body.appendChild(p);
             } else {
                 body.innerHTML = `<img src="${data.drawingBase64}" style="width:100%; border-radius:10px;">`;
@@ -149,35 +68,35 @@
             modal.style.display = "flex";
         };
 
+        // 2. VIEW SECURITY (FIXED: REMOVED FALSE ALARM)
         window.viewSecurity = (id) => {
             const d = window.allStudents[id];
             const modal = document.getElementById("infoModal");
             const body = document.getElementById("modalBody");
             document.getElementById("modalTitle").innerText = "🔒 Security Profile";
             
-            // Check for Suspicious Flag (20)
-            const warning = d.isSuspicious ? "<h3 style='color:red; text-align:center;'>⚠️ SUSPICIOUS: VPN/Proxy Detected</h3>" : "";
-
             const mapLink = d.location && d.location.lat ? 
                 `https://www.google.com/maps?q=${d.location.lat},${d.location.lng}` : "#";
 
             body.innerHTML = `
-                ${warning}
                 <div style="text-align:center;">
                     <a href="${mapLink}" target="_blank" class="primary-btn" style="text-decoration:none; display:inline-block; margin-bottom:15px; background:#00e5ff; color:#000;">🗺️ Open Google Maps</a>
                 </div>
                 <hr style="border-color:#333; margin:20px 0;">
+                <p><strong>🕒 Time:</strong> <span style="color:#fff">${new Date(d.timestamp).toLocaleString()}</span></p>
                 <p><strong>🌐 IP:</strong> <span style="color:#00e5ff">${d.ipAddress}</span></p>
-                <p><strong>🖥️ Screen:</strong> <span style="color:#ffaa00">${d.screenRes || "Unknown"}</span></p> <p><strong>📶 Network:</strong> <span style="color:#ffaa00">${d.connection || "Unknown"}</span></p>
+                <p><strong>🖥️ Screen:</strong> <span style="color:#ffaa00">${d.screenRes || "Unknown"}</span></p>
+                <p><strong>📶 Network:</strong> <span style="color:#ffaa00">${d.connection || "Unknown"}</span></p>
                 <p><strong>🔋 Battery:</strong> <span style="color:#00ffaa">${d.battery || "Unknown"}</span></p>
                 <p><strong>📱 Device:</strong> <span style="color:#aaa; font-size:12px;">${d.deviceInfo}</span></p>
             `;
             modal.style.display = "flex";
         };
 
+        // 3. DELETE
         window.deleteStudent = async (id) => {
-            if(confirm("⚠️ Delete this student permanently?")) {
-                const p = prompt("Admin Password:");
+            if(confirm("⚠️ Are you sure you want to DELETE this student?")) {
+                const p = prompt("Enter Admin Password:");
                 if(btoa(p) === "OTAyMTA=") {
                     try { await deleteDoc(doc(db, "students", id)); } 
                     catch(e) { alert("Error: " + e.message); }
@@ -185,54 +104,69 @@
             }
         };
 
-        // --- 4. DATA LISTENER ---
+        // 4. CSV EXPORT
+        window.downloadCSV = () => {
+            const rows = [["Time", "Name", "Grade", "Parent", "Phone", "IP", "Network", "Battery", "Work"]];
+            Object.values(window.allStudents).forEach(d => {
+                let time = new Date(d.timestamp).toLocaleString().replace(",", "");
+                let workType = d.story ? "Story" : (d.drawingBase64 ? "Art" : "Pending");
+                let cleanStory = d.story ? `"${d.story.replace(/"/g, '""')}"` : "N/A";
+                rows.push([
+                    time, `"${d.studentName}"`, d.grade, d.parentName, d.contact, 
+                    d.ipAddress, d.connection, d.battery, workType
+                ]);
+            });
+            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "students.csv");
+            document.body.appendChild(link);
+            link.click();
+        };
+
         onSnapshot(collection(db, "students"), (snapshot) => {
             const tbody = document.getElementById("tableBody");
-            document.getElementById("activeCount").innerText = `🟢 Total: ${snapshot.size}`;
-            
-            if (snapshot.empty) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No data yet.</td></tr>`; return; }
-            
+            if (snapshot.empty) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No data.</td></tr>`; return; }
             tbody.innerHTML = "";
-            window.allStudents = {}; 
-            window.filteredIDs = [];
-
-            snapshot.forEach(docSnap => {
-                // TRY-CATCH PREVENTS CRASHES IF ONE DATA POINT IS BAD
-                try {
-                    const d = docSnap.data();
-                    const id = docSnap.id;
-                    window.allStudents[id] = d;
-                    window.filteredIDs.push(id);
-
-                    // Handle "Missing 4G" issue cleanly
-                    const netInfo = d.connection ? d.connection : `<span style="opacity:0.3">N/A</span>`;
-
-                    let pinBtn = `<span style="opacity:0.3">🚫</span>`;
-                    if(d.location && d.location.lat) {
-                        pinBtn = `<button onclick='viewSecurity("${id}")' style="background:none; border:none; font-size:20px; cursor:pointer;">📍</button>`;
-                    }
-
-                    let workBtn = `<span style="opacity:0.3; font-size:12px;">Pending</span>`;
-                    if(d.story) workBtn = `<button onclick='viewWork("${id}", "story")' style="font-size:11px; padding:4px 8px; background:#00e5ff; color:#000; border-radius:4px; font-weight:bold;">Story</button>`;
-                    else if (d.drawingBase64) workBtn = `<button onclick='viewWork("${id}", "art")' style="font-size:11px; padding:4px 8px; background:#ff00e5; color:#fff; border-radius:4px; font-weight:bold;">Art</button>`;
-
-                    const row = `
-                        <tr class="student-row" data-id="${id}">
-                            <td><b>${d.studentName}</b><br><small style="color:#aaa">${d.grade} (${d.section})</small></td>
-                            <td style="font-size:11px; color:#ccc;">${d.ipAddress.split('(')[0]}<br><span style="color:#ffaa00">${netInfo}</span></td>
-                            <td style="text-align:center;">${pinBtn}</td>
-                            <td style="text-align:center;">${workBtn}</td>
-                            <td style="text-align:center;">
-                                <button onclick="deleteStudent('${id}')" style="background:rgba(255,0,0,0.2); border:1px solid red; color:red; padding:5px 8px; border-radius:6px; cursor:pointer;">🗑️</button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                } catch(e) { console.error("Error loading row", e); }
-            });
+            window.allStudents = {};
             
-            // Re-run filter if search box has text
-            filterTable();
+            snapshot.forEach(docSnap => {
+                const d = docSnap.data();
+                const id = docSnap.id;
+                window.allStudents[id] = d;
+
+                let timeString = "Unknown";
+                if(d.timestamp) {
+                    const dateObj = new Date(d.timestamp);
+                    timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
+                let pinBtn = `<span style="opacity:0.3">🚫</span>`;
+                if(d.location && d.location.lat) {
+                    pinBtn = `<button onclick='viewSecurity("${id}")' style="background:none; border:none; font-size:24px; cursor:pointer;" title="Security">📍</button>`;
+                }
+
+                let workBtn = `<span style="opacity:0.3">-</span>`;
+                if(d.story) {
+                    workBtn = `<button onclick='viewWork("${id}", "story")' style="font-size:12px; padding:6px 12px; background:#00e5ff; color:#000; border-radius:6px; font-weight:bold;">View Story</button>`;
+                } else if (d.drawingBase64) {
+                    workBtn = `<button onclick='viewWork("${id}", "art")' style="font-size:12px; padding:6px 12px; background:#ff00e5; color:#fff; border-radius:6px; font-weight:bold;">View Art</button>`;
+                }
+
+                const row = `
+                    <tr>
+                        <td style="font-size:12px; color:#aaa;">${timeString}</td>
+                        <td><b>${d.studentName}</b><br><small>${d.grade} (${d.section})</small></td>
+                        <td style="font-size:11px; color:#aaa;">IP: ${d.ipAddress.split('(')[0]}<br><span style="color:#ffaa00">${d.connection || "?"}</span></td>
+                        <td style="text-align:center;">${pinBtn}</td>
+                        <td style="text-align:center;">${workBtn}</td>
+                        <td style="text-align:center;">
+                            <button onclick="deleteStudent('${id}')" style="background:rgba(255,0,0,0.2); border:1px solid red; color:red; padding:6px 10px; border-radius:6px; cursor:pointer;">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
         });
     </script>
 </body>

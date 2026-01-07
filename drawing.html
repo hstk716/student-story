@@ -10,20 +10,20 @@
 <body class="dark">
 <div class="dot-bg"></div>
 <div class="form-wrapper">
-  <div class="form-card" style="max-width: 800px; overflow:hidden;" id="zoomContainer">
+  <div class="form-card" style="max-width: 800px; overflow:hidden;">
     <div class="header typewriter"><h2>Creative Canvas</h2></div>
     
     <div class="toolbar">
       <button class="icon-btn active" id="brushBtn" title="Brush">✏️</button>
-      <button class="icon-btn" id="fillBtn" title="Fill Bucket (48)">🪣</button>
-      <button class="icon-btn" id="rectBtn" title="Rectangle (54)">⬜</button>
-      <button class="icon-btn" id="circleBtn" title="Circle (54)">⭕</button>
-      <button class="icon-btn" id="textBtn" title="Text (55)">T</button>
-      <button class="icon-btn" id="stickerBtn" title="Stickers (49)">😀</button>
+      <button class="icon-btn" id="fillBtn" title="Fill Bucket">🪣</button>
+      <button class="icon-btn" id="rectBtn" title="Rectangle">⬜</button>
+      <button class="icon-btn" id="circleBtn" title="Circle">⭕</button>
+      <button class="icon-btn" id="textBtn" title="Text Tool">T</button>
+      <button class="icon-btn" id="stickerBtn" title="Stickers (Click to set)">😀</button>
       <button class="icon-btn" id="eraserBtn" title="Eraser">🧹</button>
-      <button class="icon-btn" id="undoBtn" title="Undo (50)">↩️</button>
-      <button class="icon-btn" id="bgBtn" title="Change Background (51)">🖼️</button>
-      <button class="icon-btn" id="clearBtn" style="background:#ff4444;" title="Clear">🗑️</button>
+      <button class="icon-btn" id="undoBtn" title="Undo">↩️</button>
+      <button class="icon-btn" id="bgBtn" title="Backgrounds">🖼️</button>
+      <button class="icon-btn" id="clearBtn" style="background:#ff4444;" title="Clear All">🗑️</button>
     </div>
 
     <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
@@ -48,15 +48,15 @@
   const canvas = document.getElementById('drawingCanvas');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   
-  // 50. UNDO HISTORY
+  // HISTORY FOR UNDO
   let history = [];
   let historyStep = -1;
 
   function saveHistory() {
       historyStep++;
-      if (historyStep < history.length) { history.length = historyStep; } // Cut off "redo"
+      if (historyStep < history.length) { history.length = historyStep; }
       history.push(canvas.toDataURL());
-      if(history.length > 10) { history.shift(); historyStep--; } // Limit to 10 steps
+      if(history.length > 10) { history.shift(); historyStep--; }
   }
 
   function undo() {
@@ -68,93 +68,60 @@
       }
   }
 
-  // RESIZE LOGIC
+  // RESIZE & INIT
   function resize() { 
-      // Only resize on first load to prevent clearing canvas
       if(canvas.width !== canvas.offsetWidth) {
         const s = canvas.toDataURL(); 
         canvas.width = canvas.offsetWidth; 
         canvas.height = 400; 
         const i = new Image(); i.src = s; 
         i.onload = () => {
-            // If empty, fill with white or black based on theme
             if(s.length < 1000) { ctx.fillStyle = "#000000"; ctx.fillRect(0,0,canvas.width,canvas.height); }
             else ctx.drawImage(i,0,0);
-            saveHistory(); // Initial state
+            saveHistory();
         };
       }
   }
   setTimeout(resize, 100);
 
-  // TOOLS STATE
+  // STATE VARIABLES
   let isDrawing = false, mode = 'brush', color = '#ffffff', size = 5;
   let startX, startY;
-  let snapshot; // For shapes
+  let snapshot; 
+  let currentSticker = "⭐"; // Default sticker
 
-  // UPDATE ACTIVE BUTTON
-  const btns = document.querySelectorAll('.icon-btn');
-  function setActive(id) {
-      btns.forEach(b => b.classList.remove('active'));
-      if(id && id !== 'undoBtn' && id !== 'clearBtn' && id !== 'bgBtn') {
-        document.getElementById(id).classList.add('active');
-        mode = id.replace('Btn','');
-      }
-  }
-
-  // --- 48. FILL BUCKET (Simple Flood Fill) ---
-  // Using a simplified non-recursive approach to prevent crashes
+  // FLOOD FILL
   function floodFill(startX, startY, newColorHex) {
-      // Convert Hex to RGBA
       const bigint = parseInt(newColorHex.slice(1), 16);
       const r = (bigint >> 16) & 255;
       const g = (bigint >> 8) & 255;
       const b = bigint & 255;
-      
       const pixelStack = [[startX, startY]];
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
-      
       const startPos = (startY * canvas.width + startX) * 4;
       const startR = data[startPos], startG = data[startPos+1], startB = data[startPos+2];
-      
-      if(startR === r && startG === g && startB === b) return; // Same color
-
+      if(startR === r && startG === g && startB === b) return;
       while(pixelStack.length) {
         const newPos = pixelStack.pop();
         const x = newPos[0], y = newPos[1];
         let pixelPos = (y * canvas.width + x) * 4;
-        
         while(y-- >= 0 && matchColor(pixelPos, startR, startG, startB)) pixelPos -= canvas.width * 4;
         pixelPos += canvas.width * 4; y++;
-        
         let reachLeft = false, reachRight = false;
-        
         while(y++ < canvas.height - 1 && matchColor(pixelPos, startR, startG, startB)) {
             colorPixel(pixelPos, r, g, b);
-            if(x > 0) {
-                if(matchColor(pixelPos - 4, startR, startG, startB)) {
-                    if(!reachLeft) { pixelStack.push([x - 1, y]); reachLeft = true; }
-                } else if(reachLeft) reachLeft = false;
-            }
-            if(x < canvas.width - 1) {
-                if(matchColor(pixelPos + 4, startR, startG, startB)) {
-                    if(!reachRight) { pixelStack.push([x + 1, y]); reachRight = true; }
-                } else if(reachRight) reachRight = false;
-            }
+            if(x > 0) { if(matchColor(pixelPos - 4, startR, startG, startB)) { if(!reachLeft) { pixelStack.push([x - 1, y]); reachLeft = true; } } else if(reachLeft) reachLeft = false; }
+            if(x < canvas.width - 1) { if(matchColor(pixelPos + 4, startR, startG, startB)) { if(!reachRight) { pixelStack.push([x + 1, y]); reachRight = true; } } else if(reachRight) reachRight = false; }
             pixelPos += canvas.width * 4;
         }
       }
       ctx.putImageData(imageData, 0, 0);
-      
-      function matchColor(pos, r, g, b) {
-        return (data[pos] === r && data[pos+1] === g && data[pos+2] === b);
-      }
-      function colorPixel(pos, r, g, b) {
-        data[pos] = r; data[pos+1] = g; data[pos+2] = b; data[pos+3] = 255;
-      }
+      function matchColor(pos, r, g, b) { return (data[pos] === r && data[pos+1] === g && data[pos+2] === b); }
+      function colorPixel(pos, r, g, b) { data[pos] = r; data[pos+1] = g; data[pos+2] = b; data[pos+3] = 255; }
   }
 
-  // --- DRAWING HANDLERS ---
+  // --- MOUSE HANDLERS ---
   const getPos = (e) => { const r = canvas.getBoundingClientRect(); if(e.touches) return {x: e.touches[0].clientX-r.left, y: e.touches[0].clientY-r.top}; return {x: e.offsetX, y: e.offsetY}; };
 
   const start = (e) => { 
@@ -171,36 +138,32 @@
       }
       if(mode === 'text') {
           const text = prompt("Enter Text:");
-          if(text) {
-              ctx.font = `${size*2}px Arial`;
-              ctx.fillStyle = color;
-              ctx.fillText(text, startX, startY);
-              saveHistory();
-          }
+          if(text) { ctx.font = `${size*2}px Arial`; ctx.fillStyle = color; ctx.fillText(text, startX, startY); saveHistory(); }
           isDrawing = false;
           return;
       }
       if(mode === 'sticker') {
-          const sticker = prompt("Paste an Emoji (e.g. 😀):", "⭐");
-          if(sticker) {
-              ctx.font = `${size*3}px Arial`;
-              ctx.fillText(sticker, startX, startY);
-              saveHistory();
-          }
+          // JUST STAMP IT (No Popup)
+          ctx.font = `${size*3}px Arial`;
+          ctx.fillText(currentSticker, startX, startY);
+          saveHistory();
           isDrawing = false;
           return;
       }
       
-      // Save snapshot for shapes
-      if(mode === 'rect' || mode === 'circle') {
-          snapshot = ctx.getImageData(0,0, canvas.width, canvas.height);
-      } else {
-          ctx.moveTo(p.x,p.y);
-      }
+      if(mode === 'rect' || mode === 'circle') snapshot = ctx.getImageData(0,0, canvas.width, canvas.height);
+      else ctx.moveTo(p.x,p.y);
       if(e.type=='touchstart')e.preventDefault(); 
   };
 
   const move = (e) => { 
+      // PREVIEW STICKER (Follows Mouse)
+      if(mode === 'sticker' && !isDrawing) {
+         // This is complex on 2D canvas without layers, skipping preview to keep it fast on low-end
+         // Instead, we just rely on click-to-stamp
+         return; 
+      }
+
       if(!isDrawing) return; 
       if(e.type=='touchmove') e.preventDefault(); 
       const p=getPos(e); 
@@ -215,12 +178,10 @@
           ctx.beginPath(); 
           ctx.moveTo(p.x,p.y);
       } else if (mode === 'rect') {
-          ctx.putImageData(snapshot, 0, 0);
-          ctx.strokeStyle = color; ctx.lineWidth = size;
+          ctx.putImageData(snapshot, 0, 0); ctx.strokeStyle = color; ctx.lineWidth = size;
           ctx.strokeRect(startX, startY, p.x - startX, p.y - startY);
       } else if (mode === 'circle') {
-          ctx.putImageData(snapshot, 0, 0);
-          ctx.strokeStyle = color; ctx.lineWidth = size;
+          ctx.putImageData(snapshot, 0, 0); ctx.strokeStyle = color; ctx.lineWidth = size;
           ctx.beginPath();
           let r = Math.sqrt(Math.pow(p.x-startX,2) + Math.pow(p.y-startY,2));
           ctx.arc(startX, startY, r, 0, 2 * Math.PI);
@@ -232,15 +193,29 @@
       if(isDrawing) saveHistory();
       isDrawing=false; 
       ctx.beginPath(); 
-      // Reset composite for shapes
       ctx.globalCompositeOperation = 'source-over';
   };
 
-  // EVENTS
   canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', end);
   canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', end);
 
-  // BUTTON LISTENERS
+  // --- BUTTON LOGIC ---
+  const btns = document.querySelectorAll('.icon-btn');
+  function setActive(id) {
+      btns.forEach(b => b.classList.remove('active'));
+      if(id && id !== 'undoBtn' && id !== 'clearBtn' && id !== 'bgBtn') {
+        document.getElementById(id).classList.add('active');
+        mode = id.replace('Btn','');
+
+        // SPECIAL CASE: STICKER BUTTON CLICK
+        if(mode === 'sticker') {
+            const input = prompt("Choose an emoji to stamp:", currentSticker);
+            if(input) currentSticker = input;
+        }
+      }
+  }
+
+  // TOOL BUTTONS
   document.getElementById('brushBtn').onclick = () => setActive('brushBtn');
   document.getElementById('eraserBtn').onclick = () => setActive('eraserBtn');
   document.getElementById('fillBtn').onclick = () => setActive('fillBtn');
@@ -248,32 +223,44 @@
   document.getElementById('circleBtn').onclick = () => setActive('circleBtn');
   document.getElementById('textBtn').onclick = () => setActive('textBtn');
   document.getElementById('stickerBtn').onclick = () => setActive('stickerBtn');
-
-  // 50. UNDO
   document.getElementById('undoBtn').onclick = undo;
 
-  // 51. BACKGROUND TEMPLATE
+  // BACKGROUNDS (FIXED)
   document.getElementById('bgBtn').onclick = () => {
-      const type = prompt("Choose BG:\n1. White\n2. Black\n3. Graph Paper\n4. Blue Line");
+      const type = prompt("Choose BG:\n1. White\n2. Black\n3. Graph Paper\n4. Blue Line (Notebook)");
       ctx.clearRect(0,0,canvas.width,canvas.height);
       if(type === '1') { ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height); }
       else if(type === '2') { ctx.fillStyle = 'black'; ctx.fillRect(0,0,canvas.width,canvas.height); }
       else if(type === '3') { 
-          // Graph Paper
+          // Graph
           ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height);
           ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1;
           for(let i=0; i<canvas.width; i+=20) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
           for(let i=0; i<canvas.height; i+=20) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
       }
+      else if(type === '4') { 
+          // Blue Line (Notebook)
+          ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.strokeStyle = '#a4c2f4'; ctx.lineWidth = 1; // Light Blue
+          
+          // Draw Vertical Margin Line
+          ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(40, canvas.height); 
+          ctx.strokeStyle = '#ffcccc'; // Red Margin
+          ctx.stroke();
+
+          // Draw Horizontal Blue Lines
+          ctx.strokeStyle = '#a4c2f4';
+          for(let i=40; i<canvas.height; i+=30) { 
+              ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); 
+          }
+      }
       saveHistory();
   };
 
-  // COLOR & SIZE
   document.getElementById('colorPicker').oninput = (e) => color=e.target.value;
   document.getElementById('sizeSlider').oninput = (e) => { size=e.target.value; document.getElementById('sizeLabel').innerText = size+"px"; };
   document.getElementById('clearBtn').onclick = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="#000"; ctx.fillRect(0,0,canvas.width,canvas.height); saveHistory(); };
 
-  // SAVE
   document.getElementById('submitBtn').onclick = async () => { 
       const btn = document.getElementById('submitBtn'); 
       try { 

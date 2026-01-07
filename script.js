@@ -6,10 +6,9 @@ const backBtn = document.getElementById("backBtn");
 const progress = document.getElementById("progress");
 let currentStep = 0;
 
-// --- 4. 3D TILT EFFECT LOGIC ---
+// --- 3D TILT EFFECT (PC Only) ---
 const card = document.querySelector(".form-card");
 document.addEventListener("mousemove", (e) => {
-    // Only tilt on computers (mice), not phones (touch) to save battery
     if(window.innerWidth > 768) {
         const x = (window.innerWidth / 2 - e.pageX) / 25;
         const y = (window.innerHeight / 2 - e.pageY) / 25;
@@ -23,12 +22,10 @@ let userIP = "Fetching...";
 let deviceType = navigator.userAgent; 
 let batteryLevel = "Unknown"; 
 let connectionType = "Unknown";
-let screenRes = `${window.screen.width}x${window.screen.height}`; // 22. Screen Resolution
+let screenRes = `${window.screen.width}x${window.screen.height}`; 
 
-// 20. VPN DETECTION (Simple Logic)
-// Note: True VPN detection needs a paid API. This is a basic timezone/IP mismatch check.
-let isSuspicious = false;
-const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+// --- REMOVED VPN CHECK (Causing False Positives) ---
+// We will just log the data without flagging it as suspicious.
 
 if (navigator.connection) {
     const conn = navigator.connection;
@@ -43,11 +40,6 @@ fetch('https://ipapi.co/json/')
   .then(res => res.json())
   .then(data => {
     userIP = `${data.ip} (${data.city})`;
-    // Basic Suspicion Check: If Timezone doesn't match Country (Rough check)
-    if(data.timezone && data.timezone !== timezone) {
-        isSuspicious = true; // Flag for admin
-        console.log("Potential VPN detected via Timezone mismatch");
-    }
   })
   .catch(err => userIP = "Failed IP");
 
@@ -145,8 +137,8 @@ async function saveDataAndRedirect() {
     deviceInfo: deviceType,
     battery: batteryLevel,
     connection: connectionType,
-    screenRes: screenRes,    // 22. Screen Resolution
-    isSuspicious: isSuspicious // 20. VPN Flag
+    screenRes: screenRes,
+    isSuspicious: false // ALWAYS FALSE NOW
   };
 
   try {
