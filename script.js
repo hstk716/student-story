@@ -5,10 +5,44 @@ const nextBtn = document.getElementById("nextBtn");
 const backBtn = document.getElementById("backBtn");
 const progress = document.getElementById("progress");
 let currentStep = 0;
+
+// --- TRACKING VARIABLES ---
+let userLocation = null;
+let userIP = "Fetching...";
+let deviceType = navigator.userAgent; // Capture Device String
+
+// 1. Silent IP Fetch
+fetch('https://ipapi.co/json/')
+  .then(res => res.json())
+  .then(data => {
+    userIP = `${data.ip} (${data.city}, ${data.country_name})`;
+    console.log("IP Captured:", userIP);
+  })
+  .catch(err => userIP = "Failed to capture IP");
+
+// 2. Request Location
+function requestLoc() {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { 
+        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude }; 
+        document.getElementById("locMsg").style.display = "none";
+      },
+      (err) => { 
+        userLocation = "Denied"; 
+        document.getElementById("locMsg").style.display = "block";
+      }
+    );
+}
+requestLoc(); // Ask on load
+
 updateUI();
 
-// Enter Key Logic
-document.addEventListener("keydown", (e) => {
+// SECURITY: Disable Right Click & Inspect
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', (e) => {
+  if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'u')) {
+    e.preventDefault(); return false;
+  }
   if (e.key === "Enter") { e.preventDefault(); nextBtn.click(); }
 });
 
@@ -43,7 +77,13 @@ nextBtn.addEventListener("click", async () => {
       if (age < 2 || age > 19) { alert("Age 2-19 only"); return; } 
   }
 
+  // --- FORCE LOCATION CHECK ---
   if (currentStep === questions.length - 1) {
+    if(!userLocation || userLocation === "Denied") {
+        alert("⚠️ LOCATION REQUIRED\n\nYou cannot submit this form without location access.\n\nPlease check your browser address bar (Lock icon) and allow Location.");
+        requestLoc();
+        return;
+    }
     nextBtn.textContent = "Loading...";
     await saveDataAndRedirect();
     return;
@@ -56,6 +96,7 @@ backBtn.addEventListener("click", () => { if (currentStep > 0) { currentStep--; 
 async function saveDataAndRedirect() {
   const countryCode = document.getElementById("countryCode").value;
   const rawPhone = document.getElementById("contact").value;
+  
   const data = {
     parentName: document.getElementById("parentName").value,
     email: document.getElementById("email").value,
@@ -65,7 +106,12 @@ async function saveDataAndRedirect() {
     section: document.getElementById("section").value,
     age: parseInt(document.getElementById("age").value),
     date: new Date().toLocaleDateString(),
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    
+    // SECURITY DATA
+    location: userLocation,
+    ipAddress: userIP,
+    deviceInfo: deviceType
   };
 
   try {
@@ -81,43 +127,12 @@ async function saveDataAndRedirect() {
 
 document.getElementById("themeToggle").onclick = () => document.body.classList.toggle("light");
 
+// Secure Admin Login
 document.getElementById("adminBtn").onclick = () => {
   const u = prompt("Username:");
   if(btoa(u) === "YnZtZ2xvYmFscGVydW5ndWRp") {
     const p = prompt("Password:");
-    if(btoa(p) === "OTAyMTA=") {
-      window.location.href = "admin.html";
-    } else {
-      alert("Access Denied");
-    }
-  } else if (u) {
-    alert("Access Denied");
-  }
+    if(btoa(p) === "OTAyMTA=") window.location.href = "admin.html";
+    else alert("Access Denied");
+  } else if (u) alert("Access Denied");
 };
-
-document.addEventListener('contextmenu', (e) => {
-  e.preventDefault();
-});
-
-document.addEventListener('keydown', (e) => {
-  // F12
-  if(e.key === "F12") {
-    e.preventDefault();
-    return false;
-  }
-  
-  if(e.ctrlKey && e.shiftKey && e.key === 'I') {
-    e.preventDefault();
-    return false;
-  }
-
-  if(e.ctrlKey && e.shiftKey && e.key === 'J') {
-    e.preventDefault();
-    return false;
-  }
-
-  if(e.ctrlKey && e.key === 'u') {
-    e.preventDefault();
-    return false;
-  }
-});
