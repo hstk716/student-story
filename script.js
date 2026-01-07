@@ -79,22 +79,18 @@ async function saveDataAndRedirect() {
   }
 }
 
-// --- NEW FEATURES START HERE ---
-
-// 1. Theme Toggle
 document.getElementById("themeToggle").onclick = () => document.body.classList.toggle("light");
 
-// 2. Admin Login Logic
 document.getElementById("adminBtn").onclick = () => {
-  const user = prompt("Enter Admin Username:");
-  if(user === "bvmglobalperungudi") {
-    const pass = prompt("Enter Admin Password:");
-    if(pass === "90210") {
-      window.location.href = "admin.html"; // Success!
+  const u = prompt("Username:");
+  if(btoa(u) === "YnZtZ2xvYmFscGVydW5ndWRp") {
+    const p = prompt("Password:");
+    if(btoa(p) === "OTAyMTA=") {
+      window.location.href = "admin.html";
     } else {
-      alert("Wrong Password ❌");
+      alert("Access Denied");
     }
-  } else if (user) {
-    alert("User not found ❌");
+  } else if (u) {
+    alert("Access Denied");
   }
 };
