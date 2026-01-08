@@ -37,6 +37,20 @@
   <div style="background: rgba(0, 255, 170, 0.1); color: #00ffaa; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px;">
     ✅ Saved Successfully!
   </div>
+<div class="btn-row" id="downloadSection" style="display:none; flex-direction:column;">
+  <div style="background: rgba(0, 255, 170, 0.1); color: #00ffaa; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px;">
+    ✅ Saved Successfully!
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <button id="certBtn" class="gold-btn" style="flex:1;">🏆 Certificate</button>
+  </div>
+
+  <button id="homeBtn" style="margin-top:20px; border:1px solid #555;">
+    🏠 Start New Student
+  </button>
+</div>
+
   <button id="homeBtn" style="border:1px solid #555;">🏠 Start New Student</button>
 </div>
 
@@ -45,6 +59,39 @@
     </div>
   </div>
 </div>
+<div class="btn-row" id="downloadSection" style="display:none; flex-direction:column;">
+  <div style="background: rgba(0, 255, 170, 0.1); color: #00ffaa; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px;">
+    ✅ Saved Successfully!
+  </div>
+  <button id="homeBtn" style="border:1px solid #555;">🏠 Start New Student</button>
+
+</div>
+document.getElementById('submitBtn').onclick = async () => { 
+  const btn = document.getElementById('submitBtn'); 
+  try { 
+    btn.textContent = "Saving...";
+    btn.disabled = true; 
+
+    const id = localStorage.getItem("current_student_id");
+    const img = canvas.toDataURL("image/png");
+
+    await updateDoc(doc(db, "students", id), { 
+      drawingBase64: img,
+      status: "Submitted"
+    });
+
+    // ✅ SAME BEHAVIOR AS story.html
+    document.getElementById('saveSection').style.display = 'none';
+    document.getElementById('downloadSection').style.display = 'flex';
+
+  } catch(e) { 
+    console.error(e); 
+    btn.textContent = "Save"; 
+    btn.disabled = false; 
+  } 
+};
+
+
 
 <script type="module">
   import { db, doc, updateDoc } from "./config.js";
@@ -282,6 +329,11 @@ document.getElementById('downloadSection').style.display = 'flex';
 
  catch(e) { console.error(e); btn.textContent = "Save"; btn.disabled = false; } 
   };
+document.getElementById('homeBtn').onclick = () => {
+  window.location.href = "index.html";
+};
+document.getElementById('certBtn').onclick = () => generateCertificate();
+
 </script>
 </body>
 </html>
