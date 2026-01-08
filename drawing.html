@@ -266,7 +266,7 @@
       try { 
           btn.textContent = "Saving..."; btn.disabled = true; 
           const id = localStorage.getItem("current_student_id");
-          const img = canvas.toDataURL("image/png");
+          const img = canvas.toDataURL("image/jpeg");
           await updateDoc(doc(db, "students", id), { drawingBase64: img, status: "Submitted" });
           alert("Saved!");
           window.location.href="index.html";
@@ -274,4 +274,5 @@
   };
 </script>
 </body>
+
 </html>
