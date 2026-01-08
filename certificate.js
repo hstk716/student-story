@@ -5,7 +5,7 @@ export async function generateCertificate() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "landscape", unit: "px", format: [800, 600] });
   const img = new Image();
-  img.src = "certificate.png"; 
+  img.src = "certificate.jpeg"; 
 
   img.onload = function () {
     doc.addImage(img, "PNG", 0, 0, 800, 600);
@@ -15,5 +15,5 @@ export async function generateCertificate() {
     doc.text(data.studentName, 400, 390, { align: "center" });
     doc.save(`${data.studentName}_Certificate.pdf`);
   };
-  img.onerror = () => alert("Error: certificate.png not found!");
+  img.onerror = () => alert("Error: certificate.jpeg not found!");
 }
