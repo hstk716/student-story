@@ -11,7 +11,7 @@ export async function generateCertificate() {
     doc.addImage(img, "PNG", 0, 0, 800, 600);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(50, 50, 50);
-    doc.setFontSize(40);
+    doc.setFontSize(28);
     doc.text(data.studentName, 400, 390, { align: "center" });
     doc.save(`${data.studentName}_Certificate.pdf`);
   };
