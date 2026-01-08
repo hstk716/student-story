@@ -1,11 +1,13 @@
 export async function generateCertificate() {
   const data = JSON.parse(localStorage.getItem("student_data"));
-  if (!data || !data.studentName) {
-    alert("Fill form first!");
+
+  if (!data || !data.studentName || !data.studentName.trim()) {
+    alert("Student name missing. Please start again.");
     return;
   }
 
   const { jsPDF } = window.jspdf;
+
   const doc = new jsPDF({
     orientation: "landscape",
     unit: "px",
@@ -15,16 +17,21 @@ export async function generateCertificate() {
   const img = new Image();
   img.crossOrigin = "anonymous";
 
-  img.onload = function () {
+  img.onload = () => {
     doc.addImage(img, "JPEG", 0, 0, 800, 600);
+
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(50, 50, 50);
     doc.setFontSize(40);
-    doc.text(data.studentName, 400, 390, { align: "center" });
-    doc.save(`${data.studentName}_Certificate.pdf`);
+    doc.setTextColor(0, 0, 0); // pure black
+
+    // FORCE string rendering
+    const name = String(data.studentName).trim();
+    doc.text(name, 400, 390, { align: "center" });
+
+    doc.save(`${name}_Certificate.pdf`);
   };
 
-  img.onerror = function () {
+  img.onerror = () => {
     alert("Error: certificate.jpeg not found!");
   };
 
