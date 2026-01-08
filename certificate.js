@@ -26,12 +26,10 @@ export async function generateCertificate() {
 
     // FORCE string rendering
     const name = String(data.studentName).trim();
-   doc.text(name, 400, 445, {
-  align: "center",
-  baseline: "top"
-});
-
-
+   doc.text(name, 400, 385, {
+      align: "center",
+      baseline: "bottom" // "bottom" helps the text sit 'on' the line
+    });
     doc.save(`${name}_Certificate.pdf`);
   };
 
