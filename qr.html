@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scan QR</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* Global */
+* { box-sizing: border-box; margin:0; padding:0; }
+html, body { height: 100%; font-family: 'Inter', sans-serif; }
+
+/* Futuristic background */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+
+/* Sparse glitchy dots */
+body::before {
+  content: '';
+  position: absolute;
+  top:0; left:0; right:0; bottom:0;
+  background-image: radial-gradient(circle, #fff 2px, transparent 2px);
+  background-size: 100px 100px;
+  z-index: 0;
+  animation: glitchDots 6s infinite alternate ease-in-out;
+  opacity: 0.15;
+}
+
+@keyframes glitchDots {
+  0%   { transform: translate(0px, 0px); }
+  25%  { transform: translate(1px, -1px); }
+  50%  { transform: translate(-1px, 2px); }
+  75%  { transform: translate(1px, 1px); }
+  100% { transform: translate(0px, -1px); }
+}
+
+/* Container */
+.container {
+  position: relative;
+  z-index: 1;
+  background: #111;
+  padding: 30px;
+  max-width: 300px;
+  width: 90%;
+  border-radius: 16px;
+  border: 1px solid #fff;
+  box-shadow: 0 0 40px rgba(255,255,255,0.05);
+  text-align: center;
+}
+
+/* Heading */
+h2 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+/* QR Image */
+.qr-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 16px;
+  border: 1px solid #fff;
+  box-shadow: 0 0 20px rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qr-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(255,255,255,0.2);
+}
+
+p {
+  margin-top: 15px;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: #bbb;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h2>Scan to Fill Form</h2>
+  <!-- Your QR code image -->
+  <img src="myqr.jpeg" alt="Student Form QR" class="qr-image">
+  <p>Point your camera at the QR code to open the student form.</p>
+</div>
+</body>
+</html>
+

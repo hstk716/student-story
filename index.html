@@ -1,71 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Student Entry Form</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<style>
-    /* Global Styles */
-    * { box-sizing: border-box; margin:0; padding:0; }
-    html, body { height: 100%; font-family: 'Inter', sans-serif; background: #000; color: #fff; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-    body::before { content: ''; position: absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(circle, #fff 2px, transparent 2px); background-size: 100px 100px; z-index: 0; animation: glitchDots 6s infinite alternate ease-in-out; opacity: 0.15; }
-    @keyframes glitchDots { 0% { transform: translate(0px, 0px); } 100% { transform: translate(0px, -1px); } }
-    
-    .container { position: relative; z-index: 1; background: #111; padding: 30px 35px; width: 100%; max-width: 450px; border-radius: 16px; border: 1px solid #fff; box-shadow: 0 0 40px rgba(255,255,255,0.05); }
-    h2 { font-size: 18px; margin: 15px 0; color: #fff; }
-    label { font-size: 11px; text-transform: uppercase; color: #bbb; margin-top: 14px; display: block; }
-    input { width: 100%; border: none; border-bottom: 1px solid #555; padding: 8px 0; font-size: 14px; font-family: 'Space Mono', monospace; background: transparent; color: #fff; }
-    input:focus { outline: none; border-bottom-color: #fff; }
-    button { margin-top: 30px; width: 100%; padding: 14px; background: #fff; color: #000; border: none; border-radius: 12px; font-family: 'Space Mono', monospace; cursor: not-allowed; opacity: 0.5; transition: all 0.2s ease; }
-    button.enabled { cursor: pointer; opacity: 1; }
-    .warning { color: red; font-size: 11px; margin-top: 6px; display: none; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Entry</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-<div class="container">
-    <h2>Parent Details</h2>
-    <label>Parent Name</label><input type="text" id="parentName" required>
-    <label>Email ID</label><input type="email" id="email" required>
-    <label>Contact Number</label><input type="tel" id="contact" placeholder="10-digit number" required>
-    
-    <h2>Student Details</h2>
-    <label>Student Name</label><input type="text" id="studentName" required>
-    <label>Grade</label><input type="text" id="grade" required>
-    <label>Section</label><input type="text" id="section" required>
-    <label>Age</label><input type="number" id="age" required>
-    
-    <button id="confirmBtn" disabled>Confirm</button>
-    <div class="warning" id="warningMsg">Please fill all details correctly.</div>
+<body class="dark">
+<div class="dot-bg"></div>
+
+<button class="theme-toggle" id="themeToggle"><div class="icon"></div></button>
+<button class="admin-toggle" id="adminBtn" title="Admin Login">🔒</button>
+
+<div class="form-wrapper">
+  <div class="form-card">
+    <div class="header">
+      <div class="progress-container"><div class="progress" id="progress"></div></div>
+      <h2>Student Entry</h2>
+    </div>
+
+    <form id="mainForm" onsubmit="return false;">
+      <div class="question-container">
+        <div class="question active"><label>Parent's Name</label><input type="text" id="parentName" placeholder="Type name..." autofocus></div>
+        <div class="question"><label>Email Address</label><input type="email" id="email" placeholder="name@email.com"></div>
+        <div class="question">
+          <label>Phone Number</label>
+          <div class="phone-input-group">
+            <select id="countryCode"><option value="+91">🇮🇳 +91</option><option value="+1">🇺🇸 +1</option><option value="+44">🇬🇧 +44</option></select>
+            <input type="tel" id="contact" placeholder="1234567890" maxlength="10">
+          </div>
+        </div>
+        <div class="question"><label>Student's Name</label><input type="text" id="studentName" placeholder="Type name..."></div>
+        <div class="question"><label>Grade / Class</label><input type="number" id="grade" placeholder="e.g. 5"></div>
+        <div class="question"><label>Section</label><input type="text" id="section" placeholder="A, B, C..." style="text-transform: uppercase;"></div>
+        <div class="question"><label>Age</label><input type="number" id="age" placeholder="Years old"></div>
+      </div>
+
+      <div class="btn-row" style="flex-direction: row;">
+        <button type="button" id="backBtn">Back</button>
+        <button type="button" id="nextBtn" class="primary-btn">Next ➔</button>
+      </div>
+      
+      <p id="locMsg" style="color: #ff4444; font-size: 13px; text-align: center; margin-top: 15px; display: none; background: rgba(255,0,0,0.1); padding: 10px; border-radius: 8px;">
+        📍 <b>Location Required</b><br>Please allow location access to continue.
+      </p>
+    </form>
+  </div>
 </div>
-
-<script>
-    const fields = ['parentName','email','contact','studentName','grade','section','age'];
-    const confirmBtn = document.getElementById("confirmBtn");
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKAEm7stHGe72BScqPjmLh--cGBotTEu7gvCbCTBDXcCaEtk2wqVFFiI1teceAdypx/exec";
-
-    fields.forEach(id => document.getElementById(id).addEventListener('input', () => {
-        let allFilled = fields.every(f => document.getElementById(f).value.trim() !== "");
-        let contactValid = /^\d{10}$/.test(document.getElementById('contact').value.trim());
-        confirmBtn.disabled = !(allFilled && contactValid);
-        confirmBtn.classList.toggle("enabled", !confirmBtn.disabled);
-    }));
-
-    confirmBtn.addEventListener('click', async () => {
-        const formData = {};
-        fields.forEach(id => formData[id] = document.getElementById(id).value.trim());
-        
-        // Save to localStorage so the certificate can access the name
-        localStorage.setItem("student_data", JSON.stringify(formData));
-        
-        confirmBtn.innerText = "Processing...";
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(formData) });
-        } catch (e) { console.log("Network error, moving forward anyway."); }
-
-        window.location.href = (parseInt(formData.age) < 10) ? "drawing.html" : "story.html";
-    });
-</script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
