@@ -275,8 +275,8 @@
   document.getElementById('colorPicker').oninput = (e) => color=e.target.value;
   document.getElementById('sizeSlider').oninput = (e) => { size=e.target.value; document.getElementById('sizeLabel').innerText = size+"px"; };
   document.getElementById('clearBtn').onclick = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="#000"; ctx.fillRect(0,0,canvas.width,canvas.height); saveHistory(); };
-
-document.getElementById('submitBtn').onclick = async () => {
+   
+    document.getElementById('submitBtn').onclick = async () => {
   const btn = document.getElementById('submitBtn');
   try {
     btn.textContent = "Saving...";
@@ -292,9 +292,14 @@ document.getElementById('submitBtn').onclick = async () => {
       status: "Submitted"
     });
 
-    // SAME AS story.html
+    // 👇 THIS is where the UI changes (same as story.html)
     document.getElementById('saveSection').style.display = 'none';
     document.getElementById('downloadSection').style.display = 'flex';
+
+    // 👇 THIS is the IMPORTANT LINE you were missing
+    document.getElementById('certBtn').onclick = () => {
+      generateCertificate();
+    };
 
   } catch (e) {
     console.error(e);
@@ -302,6 +307,7 @@ document.getElementById('submitBtn').onclick = async () => {
     btn.disabled = false;
   }
 };
+
 
 
   </script>
