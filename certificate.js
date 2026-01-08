@@ -26,9 +26,9 @@ export async function generateCertificate() {
 
     // FORCE string rendering
     const name = String(data.studentName).trim();
-    doc.text(name, 400, 350, {
+    doc.text(name, 400, 420, {
   align: "center",
-  baseline: "top"
+  baseline: "alphabetic"
 });
 
 
