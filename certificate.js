@@ -26,9 +26,9 @@ export async function generateCertificate() {
 
     // FORCE string rendering
     const name = String(data.studentName).trim();
-   doc.text(name, 400, 385, {
-      align: "center",
-      baseline: "bottom" // "bottom" helps the text sit 'on' the line
+   doc.text(name, 400, 485, {
+        align: "center",
+        baseline: "bottom"
     });
     doc.save(`${name}_Certificate.pdf`);
   };
